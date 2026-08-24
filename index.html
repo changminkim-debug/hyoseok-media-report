@@ -162,11 +162,16 @@ tr.total-row:hover td{background:var(--accent-soft)}
 .vt-btn:hover:not(.active){color:var(--text-dim)}
 .target-box{height:300px}
 .date-range{display:flex;align-items:center;gap:5px;margin-top:8px}
-.date-in{flex:1;min-width:0;padding:6px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11.5px;font-family:inherit;box-sizing:border-box}
+.date-in{flex:1;min-width:0;padding:8px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;font-family:inherit;box-sizing:border-box;cursor:pointer}
 .date-in:focus{outline:none;border-color:var(--accent)}
+.date-in::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.75}
 .date-sep{font-size:11px;color:var(--text-faint);flex-shrink:0}
+.date-apply{width:100%;margin-top:6px;padding:8px;border-radius:7px;border:none;background:var(--border-soft);color:var(--text-dim);font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;transition:background .12s,color .12s}
+.date-apply:hover{background:var(--accent-soft);color:var(--accent)}
+.date-apply.pending{background:var(--accent);color:#fff}
 .date-hint{font-size:10px;color:var(--text-faint);margin-top:6px;line-height:1.5}
 .date-hint b{color:var(--accent);font-weight:700}
+.date-hint.warn{color:var(--accent-warm)}
 .camp-tag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9px;display:inline-block;background:var(--accent-soft);color:var(--accent)}
 .donut-wrap{height:300px;display:none;flex-direction:column;gap:4px}
 .donut-caption{font-size:10.5px;color:var(--text-faint);text-align:center;flex-shrink:0}
@@ -205,11 +210,12 @@ tr.total-row:hover td{background:var(--accent-soft)}
       <div class="sb-label">기간</div>
       <div class="sb-pills" id="period-pills"></div>
       <div class="date-range">
-        <input class="date-in" type="date" id="date-start" onchange="setCustomRange()">
+        <input class="date-in" type="date" id="date-start" oninput="markDatePending()" onkeydown="onDateKey(event)" onclick="openPicker(this)">
         <span class="date-sep">~</span>
-        <input class="date-in" type="date" id="date-end" onchange="setCustomRange()">
+        <input class="date-in" type="date" id="date-end" oninput="markDatePending()" onkeydown="onDateKey(event)" onclick="openPicker(this)">
       </div>
-      <div class="date-hint" id="date-hint">날짜를 직접 고르면 <b>직접 선택</b>으로 전환됩니다. 하루만 보려면 시작·종료를 같게.</div>
+      <button class="date-apply" id="date-apply" onclick="applyCustomRange()">적용하기</button>
+      <div class="date-hint" id="date-hint">시작·종료를 고르고 <b>적용하기</b>. 하루만 보려면 두 날짜를 같게.</div>
     </div>
     <div class="sb-bottom" id="metric-note">VTR = 조회수 ÷ 노출수<br>CPV = 비용 ÷ 조회수</div>
   </div>
@@ -225,7 +231,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
           <button class="active" data-vat="excl" onclick="setVat('excl')">VAT 제외</button>
           <button data-vat="incl" onclick="setVat('incl')">VAT 포함</button>
         </div>
-        <div class="hd-gen">생성: 2026. 8. 24. 오후 3:16:47</div>
+        <div class="hd-gen">생성: 2026. 8. 24. 오후 3:30:15</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -518,9 +524,9 @@ function renderPeriodPills() {
   el.innerHTML = PERIODS.map(p => `<button class="sb-pill ${p.key===CUR_PERIOD?'active':''}" onclick="setPeriod('${p.key}')">${p.label}</button>`).join('');
 }
 function setPeriod(key) {
+  if (key === 'custom') { applyCustomRange(); return; }   // 필 클릭 = 입력칸 값 적용
   CUR_PERIOD = key;
   renderAll();
-  if (key === 'custom') document.getElementById('date-start').focus();
 }
 
 // 캠페인명에 따옴표·특수문자가 들어가도 안전하도록 onclick에는 인덱스만 넘긴다(-1 = 전체).
@@ -535,31 +541,63 @@ function renderCampaignPills() {
 function setCampaignIdx(i) { setCampaign(i < 0 ? 'all' : CAMPAIGNS[i]); }
 function setCampaign(key) { CUR_CAMPAIGN = key; renderAll(); }
 
-// 날짜 입력칸을 만지면 '직접 선택'으로 전환된다.
-function setCustomRange() {
-  const s = document.getElementById('date-start').value;
-  const e = document.getElementById('date-end').value;
-  if (!s && !e) return;
-  CUSTOM_RANGE = [s || null, e || null];
-  CUR_PERIOD = 'custom';
-  renderAll();
+// 날짜 직접 선택 — 입력칸을 만지는 즉시 렌더하지 않는다.
+// (렌더가 입력칸 value를 다시 써서 편집 중인 값이 리셋되는 문제가 있었음)
+// 값 읽기는 '적용하기'를 누를 때만. 그 사이에는 버튼만 강조해 대기 상태를 알린다.
+const ALL_DATES = DATA.google.dates || [];
+const DATE_LO = ALL_DATES[0] || '';
+const DATE_HI = ALL_DATES[ALL_DATES.length - 1] || '';
+
+function dateHint(html, warn) {
+  const el = document.getElementById('date-hint');
+  el.innerHTML = html;
+  el.classList.toggle('warn', !!warn);
 }
-// 프리셋으로 기간이 바뀌면 입력칸도 그 값으로 따라온다.
+function markDatePending() {
+  document.getElementById('date-apply').classList.add('pending');
+  dateHint('<b>적용하기</b>를 누르면 반영됩니다.');
+}
+function onDateKey(ev) {
+  if (ev.key === 'Enter') { ev.preventDefault(); applyCustomRange(); }
+}
+// 달력 아이콘이 작아 못 누르는 경우가 있어 입력칸 어디를 눌러도 달력이 열리게 한다.
+function openPicker(el) {
+  try { el.showPicker(); } catch (e) { /* 미지원 브라우저는 기본 동작 */ }
+}
+function applyCustomRange() {
+  const si = document.getElementById('date-start');
+  const ei = document.getElementById('date-end');
+  let s = si.value, e = ei.value;
+  if (!s && !e) { dateHint('날짜를 먼저 선택하세요.', true); return; }
+  if (!s) s = e;
+  if (!e) e = s;
+  if (s > e) { const t = s; s = e; e = t; }           // 역순 입력 자동 정렬
+  let clipped = false;
+  if (DATE_LO && s < DATE_LO) { s = DATE_LO; clipped = true; }
+  if (DATE_HI && e > DATE_HI) { e = DATE_HI; clipped = true; }
+  si.value = s;
+  ei.value = e;
+  CUSTOM_RANGE = [s, e];
+  CUR_PERIOD = 'custom';
+  document.getElementById('date-apply').classList.remove('pending');
+  renderAll();
+  const days = Math.round((parseISO(e) - parseISO(s)) / 86400000) + 1;
+  dateHint('적용: <b>' + fmtShort(s) + ' ~ ' + fmtShort(e) + '</b> (' + days + '일)'
+    + (clipped ? ' · 데이터 보유 범위로 조정' : ''), false);
+}
+// 프리셋을 누르면 입력칸도 그 범위로 맞춘다. '직접 선택' 상태에서는 손대지 않는다.
 function syncDateInputs(view, start, end) {
   const si = document.getElementById('date-start');
   const ei = document.getElementById('date-end');
-  const lo = view.dates[0];
-  const hi = view.dates[view.dates.length - 1];
   for (const el of [si, ei]) {
-    if (lo) el.min = lo;
-    if (hi) el.max = hi;
+    if (DATE_LO) el.min = DATE_LO;
+    if (DATE_HI) el.max = DATE_HI;
   }
+  if (CUR_PERIOD === 'custom') return;
   si.value = start;
   ei.value = end;
-  const days = Math.round((parseISO(end) - parseISO(start)) / 86400000) + 1;
-  document.getElementById('date-hint').innerHTML = CUR_PERIOD === 'custom'
-    ? '선택 구간 <b>' + days + '일</b> · 하루만 보려면 시작·종료를 같게'
-    : '날짜를 직접 고르면 <b>직접 선택</b>으로 전환됩니다.';
+  document.getElementById('date-apply').classList.remove('pending');
+  dateHint('시작·종료를 고르고 <b>적용하기</b>. 하루만 보려면 두 날짜를 같게.');
 }
 
 function renderKPI(view) {
