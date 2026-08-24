@@ -161,6 +161,13 @@ tr.total-row:hover td{background:var(--accent-soft)}
 .vt-btn.active{background:var(--panel);color:var(--accent);box-shadow:var(--shadow)}
 .vt-btn:hover:not(.active){color:var(--text-dim)}
 .target-box{height:300px}
+.date-range{display:flex;align-items:center;gap:5px;margin-top:8px}
+.date-in{flex:1;min-width:0;padding:6px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:11.5px;font-family:inherit;box-sizing:border-box}
+.date-in:focus{outline:none;border-color:var(--accent)}
+.date-sep{font-size:11px;color:var(--text-faint);flex-shrink:0}
+.date-hint{font-size:10px;color:var(--text-faint);margin-top:6px;line-height:1.5}
+.date-hint b{color:var(--accent);font-weight:700}
+.camp-tag{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:9px;display:inline-block;background:var(--accent-soft);color:var(--accent)}
 .donut-wrap{height:300px;display:none;flex-direction:column;gap:4px}
 .donut-caption{font-size:10.5px;color:var(--text-faint);text-align:center;flex-shrink:0}
 .donut-canvas-box{position:relative;flex:1;min-height:0}
@@ -190,9 +197,19 @@ tr.total-row:hover td{background:var(--accent-soft)}
         <button class="media-pill static active" type="button">YouTube<span class="sub">Google VVC</span></button>
       </div>
     </div>
+    <div class="sb-section">
+      <div class="sb-label">캠페인</div>
+      <div class="sb-pills" id="campaign-pills"></div>
+    </div>
     <div class="sb-section" style="flex:1;min-height:0;display:flex;flex-direction:column">
       <div class="sb-label">기간</div>
       <div class="sb-pills" id="period-pills"></div>
+      <div class="date-range">
+        <input class="date-in" type="date" id="date-start" onchange="setCustomRange()">
+        <span class="date-sep">~</span>
+        <input class="date-in" type="date" id="date-end" onchange="setCustomRange()">
+      </div>
+      <div class="date-hint" id="date-hint">날짜를 직접 고르면 <b>직접 선택</b>으로 전환됩니다. 하루만 보려면 시작·종료를 같게.</div>
     </div>
     <div class="sb-bottom" id="metric-note">VTR = 조회수 ÷ 노출수<br>CPV = 비용 ÷ 조회수</div>
   </div>
@@ -208,7 +225,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
           <button class="active" data-vat="excl" onclick="setVat('excl')">VAT 제외</button>
           <button data-vat="incl" onclick="setVat('incl')">VAT 포함</button>
         </div>
-        <div class="hd-gen">생성: 2026. 8. 24. 오전 10:10:55</div>
+        <div class="hd-gen">생성: 2026. 8. 24. 오후 3:16:47</div>
         <button class="btn-download" onclick="downloadData()">데이터 다운로드</button>
       </div>
     </div>
@@ -216,6 +233,16 @@ tr.total-row:hover td{background:var(--accent-soft)}
     <div class="body-pad">
       <div id="da-view">
       <div class="cards" id="kpi-cards"></div>
+
+      <div class="panel">
+        <div class="sec-title">캠페인별 성과 <span class="hint">합산이 아닌 캠페인별 지표로 판단 (연령 분리는 의도된 설계)</span></div>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th class="left">캠페인</th><th>비용</th><th>노출</th><th>조회수</th><th>VTR</th><th>CPV</th></tr></thead>
+            <tbody id="campaign-tbody"></tbody>
+          </table>
+        </div>
+      </div>
 
       <div class="panel">
         <div class="sec-title">일자별 성과 추이 <span class="hint">비용 · 조회수 · VTR</span></div>
@@ -254,11 +281,12 @@ tr.total-row:hover td{background:var(--accent-soft)}
             <div class="sec-title">연령별</div>
             <div class="view-toggle" id="age-toggle">
               <button class="vt-btn active" data-mode="table" onclick="setTargetView('age','table')">표</button>
+              <button class="vt-btn" data-mode="split" onclick="setTargetView('age','split')">캠페인</button>
               <button class="vt-btn" data-mode="chart" onclick="setTargetView('age','chart')">차트</button>
             </div>
           </div>
           <div class="tbl-scroll target-box" id="age-table-wrap">
-            <table><thead><tr><th class="left">연령</th><th>비용</th><th>조회수</th><th>VTR</th><th>CPV</th></tr></thead><tbody id="age-tbody"></tbody></table>
+            <table><thead id="age-thead"></thead><tbody id="age-tbody"></tbody></table>
           </div>
           <div class="donut-wrap" id="age-chart-wrap">
             <div class="donut-caption">조회수 비중 기준</div>
@@ -270,11 +298,12 @@ tr.total-row:hover td{background:var(--accent-soft)}
             <div class="sec-title">성별</div>
             <div class="view-toggle" id="gender-toggle">
               <button class="vt-btn active" data-mode="table" onclick="setTargetView('gender','table')">표</button>
+              <button class="vt-btn" data-mode="split" onclick="setTargetView('gender','split')">캠페인</button>
               <button class="vt-btn" data-mode="chart" onclick="setTargetView('gender','chart')">차트</button>
             </div>
           </div>
           <div class="tbl-scroll target-box" id="gender-table-wrap">
-            <table><thead><tr><th class="left">성별</th><th>비용</th><th>조회수</th><th>VTR</th><th>CPV</th></tr></thead><tbody id="gender-tbody"></tbody></table>
+            <table><thead id="gender-thead"></thead><tbody id="gender-tbody"></tbody></table>
           </div>
           <div class="donut-wrap" id="gender-chart-wrap">
             <div class="donut-caption">조회수 비중 기준</div>
@@ -286,11 +315,12 @@ tr.total-row:hover td{background:var(--accent-soft)}
             <div class="sec-title">자녀 유무</div>
             <div class="view-toggle" id="children-toggle">
               <button class="vt-btn active" data-mode="table" onclick="setTargetView('children','table')">표</button>
+              <button class="vt-btn" data-mode="split" onclick="setTargetView('children','split')">캠페인</button>
               <button class="vt-btn" data-mode="chart" onclick="setTargetView('children','chart')">차트</button>
             </div>
           </div>
           <div class="tbl-scroll target-box" id="children-table-wrap">
-            <table><thead><tr><th class="left">자녀 유무</th><th>비용</th><th>조회수</th><th>VTR</th><th>CPV</th></tr></thead><tbody id="children-tbody"></tbody></table>
+            <table><thead id="children-thead"></thead><tbody id="children-tbody"></tbody></table>
           </div>
           <div class="donut-wrap" id="children-chart-wrap">
             <div class="donut-caption">조회수 비중 기준</div>
@@ -327,7 +357,7 @@ tr.total-row:hover td{background:var(--accent-soft)}
 //# sourceMappingURL=chart.umd.js.map
 </script>
 <script>
-const DATA = {"google":{"dates":["2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23"],"byDate":{"2026-08-13":{"cost":237259,"impr":74913,"views":6677,"conv":0,"clicks":0},"2026-08-14":{"cost":256946,"impr":96877,"views":14857,"conv":0,"clicks":0},"2026-08-15":{"cost":251953,"impr":109936,"views":20983,"conv":0,"clicks":0},"2026-08-16":{"cost":251448,"impr":114614,"views":21550,"conv":0,"clicks":0},"2026-08-17":{"cost":250250,"impr":121706,"views":22037,"conv":0,"clicks":0},"2026-08-18":{"cost":248094,"impr":120037,"views":21661,"conv":0,"clicks":0},"2026-08-19":{"cost":247888,"impr":119239,"views":20184,"conv":0,"clicks":0},"2026-08-20":{"cost":247666,"impr":120988,"views":18110,"conv":0,"clicks":0},"2026-08-21":{"cost":245970,"impr":129608,"views":18774,"conv":0,"clicks":0},"2026-08-22":{"cost":245260,"impr":128146,"views":18818,"conv":0,"clicks":0},"2026-08-23":{"cost":242934,"impr":127942,"views":19132,"conv":0,"clicks":0}},"byAge":[{"age":"65세 이상","byDate":{"2026-08-13":{"cost":62301,"impr":9996,"views":2310,"conv":0,"clicks":0},"2026-08-14":{"cost":60434,"impr":21756,"views":5433,"conv":0,"clicks":0},"2026-08-15":{"cost":69087,"impr":32526,"views":9522,"conv":0,"clicks":0},"2026-08-16":{"cost":71143,"impr":34711,"views":10075,"conv":0,"clicks":0},"2026-08-17":{"cost":71591,"impr":36052,"views":10218,"conv":0,"clicks":0},"2026-08-18":{"cost":75762,"impr":39804,"views":11068,"conv":0,"clicks":0},"2026-08-19":{"cost":73643,"impr":39091,"views":10009,"conv":0,"clicks":0},"2026-08-20":{"cost":72013,"impr":37882,"views":8705,"conv":0,"clicks":0},"2026-08-21":{"cost":70390,"impr":39275,"views":8694,"conv":0,"clicks":0},"2026-08-22":{"cost":68143,"impr":38026,"views":8634,"conv":0,"clicks":0},"2026-08-23":{"cost":65345,"impr":37734,"views":8390,"conv":0,"clicks":0}}},{"age":"만 35~44세","byDate":{"2026-08-13":{"cost":32945,"impr":12730,"views":746,"conv":0,"clicks":0},"2026-08-14":{"cost":29437,"impr":9985,"views":1172,"conv":0,"clicks":0},"2026-08-15":{"cost":28296,"impr":10372,"views":1315,"conv":0,"clicks":0},"2026-08-16":{"cost":27436,"impr":9658,"views":1252,"conv":0,"clicks":0},"2026-08-17":{"cost":26824,"impr":10516,"views":1270,"conv":0,"clicks":0},"2026-08-18":{"cost":28954,"impr":10488,"views":1242,"conv":0,"clicks":0},"2026-08-19":{"cost":28585,"impr":10777,"views":1205,"conv":0,"clicks":0},"2026-08-20":{"cost":30538,"impr":11333,"views":1120,"conv":0,"clicks":0},"2026-08-21":{"cost":25864,"impr":10971,"views":1060,"conv":0,"clicks":0},"2026-08-22":{"cost":24677,"impr":10713,"views":977,"conv":0,"clicks":0},"2026-08-23":{"cost":23847,"impr":9674,"views":987,"conv":0,"clicks":0}}},{"age":"만 45~54세","byDate":{"2026-08-13":{"cost":106148,"impr":42664,"views":2460,"conv":0,"clicks":0},"2026-08-14":{"cost":123352,"impr":47865,"views":5313,"conv":0,"clicks":0},"2026-08-15":{"cost":118587,"impr":49423,"views":6227,"conv":0,"clicks":0},"2026-08-16":{"cost":118744,"impr":52357,"views":6385,"conv":0,"clicks":0},"2026-08-17":{"cost":118810,"impr":57309,"views":6697,"conv":0,"clicks":0},"2026-08-18":{"cost":114986,"impr":54935,"views":5961,"conv":0,"clicks":0},"2026-08-19":{"cost":116356,"impr":53920,"views":5632,"conv":0,"clicks":0},"2026-08-20":{"cost":113504,"impr":54594,"views":5059,"conv":0,"clicks":0},"2026-08-21":{"cost":116611,"impr":60692,"views":5532,"conv":0,"clicks":0},"2026-08-22":{"cost":116228,"impr":58868,"views":5356,"conv":0,"clicks":0},"2026-08-23":{"cost":116411,"impr":59996,"views":5716,"conv":0,"clicks":0}}},{"age":"만 55~64세","byDate":{"2026-08-13":{"cost":34069,"impr":8921,"views":1124,"conv":0,"clicks":0},"2026-08-14":{"cost":39830,"impr":15870,"views":2731,"conv":0,"clicks":0},"2026-08-15":{"cost":31264,"impr":15741,"views":3619,"conv":0,"clicks":0},"2026-08-16":{"cost":28952,"impr":15552,"views":3501,"conv":0,"clicks":0},"2026-08-17":{"cost":28266,"impr":15627,"views":3522,"conv":0,"clicks":0},"2026-08-18":{"cost":22768,"impr":12412,"views":3058,"conv":0,"clicks":0},"2026-08-19":{"cost":25037,"impr":13411,"views":3091,"conv":0,"clicks":0},"2026-08-20":{"cost":26799,"impr":15138,"views":3006,"conv":0,"clicks":0},"2026-08-21":{"cost":27610,"impr":16068,"views":3199,"conv":0,"clicks":0},"2026-08-22":{"cost":29050,"impr":17621,"views":3523,"conv":0,"clicks":0},"2026-08-23":{"cost":30586,"impr":17723,"views":3717,"conv":0,"clicks":0}}},{"age":"알 수 없음","byDate":{"2026-08-13":{"cost":1796,"impr":602,"views":37,"conv":0,"clicks":0},"2026-08-14":{"cost":3893,"impr":1401,"views":208,"conv":0,"clicks":0},"2026-08-15":{"cost":4719,"impr":1874,"views":300,"conv":0,"clicks":0},"2026-08-16":{"cost":5173,"impr":2336,"views":337,"conv":0,"clicks":0},"2026-08-17":{"cost":4759,"impr":2202,"views":330,"conv":0,"clicks":0},"2026-08-18":{"cost":5624,"impr":2398,"views":332,"conv":0,"clicks":0},"2026-08-19":{"cost":4267,"impr":2040,"views":247,"conv":0,"clicks":0},"2026-08-20":{"cost":4812,"impr":2041,"views":220,"conv":0,"clicks":0},"2026-08-21":{"cost":5495,"impr":2602,"views":289,"conv":0,"clicks":0},"2026-08-22":{"cost":7162,"impr":2918,"views":328,"conv":0,"clicks":0},"2026-08-23":{"cost":6745,"impr":2815,"views":322,"conv":0,"clicks":0}}}],"byGender":[{"gender":"남성","byDate":{"2026-08-13":{"cost":110389,"impr":28794,"views":3339,"conv":0,"clicks":0},"2026-08-14":{"cost":141700,"impr":55168,"views":8183,"conv":0,"clicks":0},"2026-08-15":{"cost":137812,"impr":61784,"views":11438,"conv":0,"clicks":0},"2026-08-16":{"cost":136254,"impr":63921,"views":11934,"conv":0,"clicks":0},"2026-08-17":{"cost":139283,"impr":68460,"views":12384,"conv":0,"clicks":0},"2026-08-18":{"cost":138887,"impr":68472,"views":12306,"conv":0,"clicks":0},"2026-08-19":{"cost":137435,"impr":66624,"views":11111,"conv":0,"clicks":0},"2026-08-20":{"cost":130969,"impr":65586,"views":9458,"conv":0,"clicks":0},"2026-08-21":{"cost":133770,"impr":71907,"views":9883,"conv":0,"clicks":0},"2026-08-22":{"cost":128548,"impr":68849,"views":9665,"conv":0,"clicks":0},"2026-08-23":{"cost":134180,"impr":72218,"views":10535,"conv":0,"clicks":0}}},{"gender":"여성","byDate":{"2026-08-13":{"cost":125749,"impr":45807,"views":3313,"conv":0,"clicks":0},"2026-08-14":{"cost":106572,"impr":38560,"views":6204,"conv":0,"clicks":0},"2026-08-15":{"cost":104888,"impr":44393,"views":8888,"conv":0,"clicks":0},"2026-08-16":{"cost":106063,"impr":46455,"views":8970,"conv":0,"clicks":0},"2026-08-17":{"cost":101505,"impr":48883,"views":8957,"conv":0,"clicks":0},"2026-08-18":{"cost":99636,"impr":47127,"views":8684,"conv":0,"clicks":0},"2026-08-19":{"cost":101739,"impr":48449,"views":8502,"conv":0,"clicks":0},"2026-08-20":{"cost":107937,"impr":51381,"views":8156,"conv":0,"clicks":0},"2026-08-21":{"cost":101919,"impr":52791,"views":8287,"conv":0,"clicks":0},"2026-08-22":{"cost":105228,"impr":54124,"views":8508,"conv":0,"clicks":0},"2026-08-23":{"cost":96994,"impr":50359,"views":7911,"conv":0,"clicks":0}}},{"gender":"알 수 없음","byDate":{"2026-08-13":{"cost":1121,"impr":312,"views":25,"conv":0,"clicks":0},"2026-08-14":{"cost":8674,"impr":3149,"views":470,"conv":0,"clicks":0},"2026-08-15":{"cost":9253,"impr":3759,"views":657,"conv":0,"clicks":0},"2026-08-16":{"cost":9131,"impr":4238,"views":646,"conv":0,"clicks":0},"2026-08-17":{"cost":9462,"impr":4363,"views":696,"conv":0,"clicks":0},"2026-08-18":{"cost":9571,"impr":4438,"views":671,"conv":0,"clicks":0},"2026-08-19":{"cost":8714,"impr":4166,"views":571,"conv":0,"clicks":0},"2026-08-20":{"cost":8760,"impr":4021,"views":496,"conv":0,"clicks":0},"2026-08-21":{"cost":10281,"impr":4910,"views":604,"conv":0,"clicks":0},"2026-08-22":{"cost":11484,"impr":5173,"views":645,"conv":0,"clicks":0},"2026-08-23":{"cost":11760,"impr":5365,"views":686,"conv":0,"clicks":0}}}],"byChildren":[{"hasChildren":"자녀 있음","byDate":{"2026-08-13":{"cost":4965,"impr":2095,"views":124,"conv":0,"clicks":0},"2026-08-14":{"cost":63692,"impr":25262,"views":3172,"conv":0,"clicks":0},"2026-08-15":{"cost":62578,"impr":27896,"views":4094,"conv":0,"clicks":0},"2026-08-16":{"cost":60348,"impr":29194,"views":4091,"conv":0,"clicks":0},"2026-08-17":{"cost":66503,"impr":34282,"views":4679,"conv":0,"clicks":0},"2026-08-18":{"cost":64342,"impr":32382,"views":4255,"conv":0,"clicks":0},"2026-08-19":{"cost":63001,"impr":31684,"views":3900,"conv":0,"clicks":0},"2026-08-20":{"cost":55805,"impr":29289,"views":3272,"conv":0,"clicks":0},"2026-08-21":{"cost":65259,"impr":34904,"views":3807,"conv":0,"clicks":0},"2026-08-22":{"cost":66525,"impr":35091,"views":3888,"conv":0,"clicks":0},"2026-08-23":{"cost":72029,"impr":39570,"views":4427,"conv":0,"clicks":0}}},{"hasChildren":"자녀 없음","byDate":{"2026-08-13":{"cost":7036,"impr":1919,"views":226,"conv":0,"clicks":0},"2026-08-14":{"cost":122350,"impr":46320,"views":8645,"conv":0,"clicks":0},"2026-08-15":{"cost":129860,"impr":59459,"views":13667,"conv":0,"clicks":0},"2026-08-16":{"cost":130125,"impr":61914,"views":13955,"conv":0,"clicks":0},"2026-08-17":{"cost":131298,"impr":65985,"views":14505,"conv":0,"clicks":0},"2026-08-18":{"cost":132767,"impr":66999,"views":14894,"conv":0,"clicks":0},"2026-08-19":{"cost":132927,"impr":67325,"views":13838,"conv":0,"clicks":0},"2026-08-20":{"cost":123926,"impr":64646,"views":11845,"conv":0,"clicks":0},"2026-08-21":{"cost":135099,"impr":72058,"views":12874,"conv":0,"clicks":0},"2026-08-22":{"cost":131933,"impr":71969,"views":12878,"conv":0,"clicks":0},"2026-08-23":{"cost":133663,"impr":73691,"views":13076,"conv":0,"clicks":0}}},{"hasChildren":"알 수 없음","byDate":{"2026-08-13":{"cost":225258,"impr":70899,"views":6327,"conv":0,"clicks":0},"2026-08-14":{"cost":70904,"impr":25295,"views":3040,"conv":0,"clicks":0},"2026-08-15":{"cost":59515,"impr":22581,"views":3222,"conv":0,"clicks":0},"2026-08-16":{"cost":60975,"impr":23506,"views":3504,"conv":0,"clicks":0},"2026-08-17":{"cost":52449,"impr":21439,"views":2853,"conv":0,"clicks":0},"2026-08-18":{"cost":50985,"impr":20656,"views":2512,"conv":0,"clicks":0},"2026-08-19":{"cost":51960,"impr":20230,"views":2446,"conv":0,"clicks":0},"2026-08-20":{"cost":67935,"impr":27053,"views":2993,"conv":0,"clicks":0},"2026-08-21":{"cost":45612,"impr":22646,"views":2093,"conv":0,"clicks":0},"2026-08-22":{"cost":46802,"impr":21086,"views":2052,"conv":0,"clicks":0},"2026-08-23":{"cost":37242,"impr":14681,"views":1629,"conv":0,"clicks":0}}}],"byCampaign":[{"campaign":"★ 2026_08_평창효석문화축제_3554","byDate":{"2026-08-13":{"cost":140668,"impr":55931,"views":3236,"conv":0,"clicks":0},"2026-08-14":{"cost":156589,"impr":59192,"views":6686,"conv":0,"clicks":0},"2026-08-15":{"cost":151379,"impr":61556,"views":7830,"conv":0,"clicks":0},"2026-08-16":{"cost":151341,"impr":64339,"views":7972,"conv":0,"clicks":0},"2026-08-17":{"cost":150393,"impr":70013,"views":8297,"conv":0,"clicks":0},"2026-08-18":{"cost":149558,"impr":67811,"views":7534,"conv":0,"clicks":0},"2026-08-19":{"cost":149198,"impr":66730,"views":7083,"conv":0,"clicks":0},"2026-08-20":{"cost":148854,"impr":67960,"views":6399,"conv":0,"clicks":0},"2026-08-21":{"cost":147933,"impr":74243,"views":6877,"conv":0,"clicks":0},"2026-08-22":{"cost":147476,"impr":72285,"views":6647,"conv":0,"clicks":0},"2026-08-23":{"cost":146517,"impr":72209,"views":7012,"conv":0,"clicks":0}}},{"campaign":"★ 2026_08_평창효석문화축제_5565+","byDate":{"2026-08-13":{"cost":96591,"impr":18982,"views":3441,"conv":0,"clicks":0},"2026-08-14":{"cost":100357,"impr":37685,"views":8171,"conv":0,"clicks":0},"2026-08-15":{"cost":100574,"impr":48380,"views":13153,"conv":0,"clicks":0},"2026-08-16":{"cost":100107,"impr":50275,"views":13578,"conv":0,"clicks":0},"2026-08-17":{"cost":99857,"impr":51693,"views":13740,"conv":0,"clicks":0},"2026-08-18":{"cost":98536,"impr":52226,"views":14127,"conv":0,"clicks":0},"2026-08-19":{"cost":98690,"impr":52509,"views":13101,"conv":0,"clicks":0},"2026-08-20":{"cost":98812,"impr":53028,"views":11711,"conv":0,"clicks":0},"2026-08-21":{"cost":98037,"impr":55365,"views":11897,"conv":0,"clicks":0},"2026-08-22":{"cost":97784,"impr":55861,"views":12171,"conv":0,"clicks":0},"2026-08-23":{"cost":96417,"impr":55733,"views":12120,"conv":0,"clicks":0}}}],"creatives":[{"campaign":"★ 2026_08_평창효석문화축제_3554","adGroup":"동영상 조회수 - 2026-08-13 - 3050MF","adName":"광고 #1","videoId":"406877868514","status":"사용중","adType":"반응형 동영상 광고","byDate":{"2026-08-13":{"cost":140669,"impr":55931,"views":3236,"conv":0,"clicks":0},"2026-08-14":{"cost":156589,"impr":59192,"views":6686,"conv":0,"clicks":0},"2026-08-15":{"cost":151380,"impr":61556,"views":7830,"conv":0,"clicks":0},"2026-08-16":{"cost":151341,"impr":64339,"views":7972,"conv":0,"clicks":0},"2026-08-17":{"cost":150393,"impr":70013,"views":8297,"conv":0,"clicks":0},"2026-08-18":{"cost":149559,"impr":67811,"views":7534,"conv":0,"clicks":0},"2026-08-19":{"cost":149200,"impr":66730,"views":7083,"conv":0,"clicks":0},"2026-08-20":{"cost":148854,"impr":67960,"views":6399,"conv":0,"clicks":0},"2026-08-21":{"cost":134095,"impr":62184,"views":6355,"conv":0,"clicks":0},"2026-08-22":{"cost":128617,"impr":60225,"views":5981,"conv":0,"clicks":0},"2026-08-23":{"cost":142082,"impr":70317,"views":6863,"conv":0,"clicks":0}}},{"campaign":"★ 2026_08_평창효석문화축제_5565+","adGroup":"동영상 조회수 - 2026-08-13 - 60+MF","adName":"광고 #1","videoId":"406877868514","status":"사용중","adType":"반응형 동영상 광고","byDate":{"2026-08-13":{"cost":96591,"impr":18982,"views":3441,"conv":0,"clicks":0},"2026-08-14":{"cost":100359,"impr":37685,"views":8171,"conv":0,"clicks":0},"2026-08-15":{"cost":100573,"impr":48380,"views":13153,"conv":0,"clicks":0},"2026-08-16":{"cost":100105,"impr":50275,"views":13578,"conv":0,"clicks":0},"2026-08-17":{"cost":99858,"impr":51693,"views":13740,"conv":0,"clicks":0},"2026-08-18":{"cost":98537,"impr":52226,"views":14127,"conv":0,"clicks":0},"2026-08-19":{"cost":98691,"impr":52509,"views":13101,"conv":0,"clicks":0},"2026-08-20":{"cost":98811,"impr":53028,"views":11711,"conv":0,"clicks":0},"2026-08-21":{"cost":92089,"impr":49260,"views":11233,"conv":0,"clicks":0},"2026-08-22":{"cost":89013,"impr":49731,"views":11163,"conv":0,"clicks":0},"2026-08-23":{"cost":95041,"impr":54912,"views":11964,"conv":0,"clicks":0}}},{"campaign":"★ 2026_08_평창효석문화축제_3554","adGroup":"동영상 조회수 - 2026-08-13 - 3050MF","adName":"광고 #2","videoId":"410565223259","status":"사용중","adType":"반응형 동영상 광고","byDate":{"2026-08-21":{"cost":13838,"impr":12059,"views":522,"conv":0,"clicks":0},"2026-08-22":{"cost":18856,"impr":12060,"views":666,"conv":0,"clicks":0},"2026-08-23":{"cost":4436,"impr":1892,"views":149,"conv":0,"clicks":0}}},{"campaign":"★ 2026_08_평창효석문화축제_5565+","adGroup":"동영상 조회수 - 2026-08-13 - 60+MF","adName":"광고 #2","videoId":"410565223259","status":"사용중","adType":"반응형 동영상 광고","byDate":{"2026-08-21":{"cost":5948,"impr":6105,"views":664,"conv":0,"clicks":0},"2026-08-22":{"cost":8772,"impr":6130,"views":1008,"conv":0,"clicks":0},"2026-08-23":{"cost":1375,"impr":821,"views":156,"conv":0,"clicks":0}}}]}};
+const DATA = {"google":{"dates":["2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23"],"campaigns":["★ 2026_08_평창효석문화축제_3554","★ 2026_08_평창효석문화축제_5565+"],"byDate":{"2026-08-13":{"cost":237259,"impr":74913,"views":6677,"conv":0,"clicks":0},"2026-08-14":{"cost":256946,"impr":96877,"views":14857,"conv":0,"clicks":0},"2026-08-15":{"cost":251953,"impr":109936,"views":20983,"conv":0,"clicks":0},"2026-08-16":{"cost":251448,"impr":114614,"views":21550,"conv":0,"clicks":0},"2026-08-17":{"cost":250250,"impr":121706,"views":22037,"conv":0,"clicks":0},"2026-08-18":{"cost":248094,"impr":120037,"views":21661,"conv":0,"clicks":0},"2026-08-19":{"cost":247888,"impr":119239,"views":20184,"conv":0,"clicks":0},"2026-08-20":{"cost":247666,"impr":120988,"views":18110,"conv":0,"clicks":0},"2026-08-21":{"cost":245970,"impr":129608,"views":18774,"conv":0,"clicks":0},"2026-08-22":{"cost":245260,"impr":128146,"views":18818,"conv":0,"clicks":0},"2026-08-23":{"cost":242934,"impr":127942,"views":19132,"conv":0,"clicks":0}},"byAge":[{"byDate":{"2026-08-13":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-14":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-15":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-16":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-17":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-18":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-19":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-20":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-21":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-22":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0},"2026-08-23":{"cost":0,"impr":0,"views":0,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","age":"65세 이상"},{"byDate":{"2026-08-13":{"cost":32945,"impr":12730,"views":746,"conv":0,"clicks":0},"2026-08-14":{"cost":29437,"impr":9985,"views":1172,"conv":0,"clicks":0},"2026-08-15":{"cost":28296,"impr":10372,"views":1315,"conv":0,"clicks":0},"2026-08-16":{"cost":27436,"impr":9658,"views":1252,"conv":0,"clicks":0},"2026-08-17":{"cost":26824,"impr":10516,"views":1270,"conv":0,"clicks":0},"2026-08-18":{"cost":28954,"impr":10488,"views":1242,"conv":0,"clicks":0},"2026-08-19":{"cost":28585,"impr":10777,"views":1205,"conv":0,"clicks":0},"2026-08-20":{"cost":30538,"impr":11333,"views":1120,"conv":0,"clicks":0},"2026-08-21":{"cost":25864,"impr":10971,"views":1060,"conv":0,"clicks":0},"2026-08-22":{"cost":24677,"impr":10713,"views":977,"conv":0,"clicks":0},"2026-08-23":{"cost":23847,"impr":9674,"views":987,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","age":"만 35~44세"},{"byDate":{"2026-08-13":{"cost":106148,"impr":42664,"views":2460,"conv":0,"clicks":0},"2026-08-14":{"cost":123352,"impr":47865,"views":5313,"conv":0,"clicks":0},"2026-08-15":{"cost":118587,"impr":49423,"views":6227,"conv":0,"clicks":0},"2026-08-16":{"cost":118744,"impr":52357,"views":6385,"conv":0,"clicks":0},"2026-08-17":{"cost":118810,"impr":57309,"views":6697,"conv":0,"clicks":0},"2026-08-18":{"cost":114986,"impr":54935,"views":5961,"conv":0,"clicks":0},"2026-08-19":{"cost":116356,"impr":53920,"views":5632,"conv":0,"clicks":0},"2026-08-20":{"cost":113504,"impr":54594,"views":5059,"conv":0,"clicks":0},"2026-08-21":{"cost":116611,"impr":60692,"views":5532,"conv":0,"clicks":0},"2026-08-22":{"cost":116228,"impr":58868,"views":5356,"conv":0,"clicks":0},"2026-08-23":{"cost":116411,"impr":59996,"views":5716,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","age":"만 45~54세"},{"byDate":{"2026-08-13":{"cost":1575,"impr":537,"views":30,"conv":0,"clicks":0},"2026-08-14":{"cost":3800,"impr":1342,"views":201,"conv":0,"clicks":0},"2026-08-15":{"cost":4496,"impr":1761,"views":288,"conv":0,"clicks":0},"2026-08-16":{"cost":5161,"impr":2324,"views":335,"conv":0,"clicks":0},"2026-08-17":{"cost":4759,"impr":2188,"views":330,"conv":0,"clicks":0},"2026-08-18":{"cost":5618,"impr":2388,"views":331,"conv":0,"clicks":0},"2026-08-19":{"cost":4257,"impr":2033,"views":246,"conv":0,"clicks":0},"2026-08-20":{"cost":4812,"impr":2033,"views":220,"conv":0,"clicks":0},"2026-08-21":{"cost":5458,"impr":2580,"views":285,"conv":0,"clicks":0},"2026-08-22":{"cost":6571,"impr":2704,"views":314,"conv":0,"clicks":0},"2026-08-23":{"cost":6259,"impr":2539,"views":309,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","age":"알 수 없음"},{"byDate":{"2026-08-13":{"cost":62301,"impr":9996,"views":2310,"conv":0,"clicks":0},"2026-08-14":{"cost":60434,"impr":21756,"views":5433,"conv":0,"clicks":0},"2026-08-15":{"cost":69087,"impr":32526,"views":9522,"conv":0,"clicks":0},"2026-08-16":{"cost":71143,"impr":34711,"views":10075,"conv":0,"clicks":0},"2026-08-17":{"cost":71591,"impr":36052,"views":10218,"conv":0,"clicks":0},"2026-08-18":{"cost":75762,"impr":39804,"views":11068,"conv":0,"clicks":0},"2026-08-19":{"cost":73643,"impr":39091,"views":10009,"conv":0,"clicks":0},"2026-08-20":{"cost":72013,"impr":37882,"views":8705,"conv":0,"clicks":0},"2026-08-21":{"cost":70390,"impr":39275,"views":8694,"conv":0,"clicks":0},"2026-08-22":{"cost":68143,"impr":38026,"views":8634,"conv":0,"clicks":0},"2026-08-23":{"cost":65345,"impr":37734,"views":8390,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","age":"65세 이상"},{"byDate":{"2026-08-13":{"cost":34069,"impr":8921,"views":1124,"conv":0,"clicks":0},"2026-08-14":{"cost":39830,"impr":15870,"views":2731,"conv":0,"clicks":0},"2026-08-15":{"cost":31264,"impr":15741,"views":3619,"conv":0,"clicks":0},"2026-08-16":{"cost":28952,"impr":15552,"views":3501,"conv":0,"clicks":0},"2026-08-17":{"cost":28266,"impr":15627,"views":3522,"conv":0,"clicks":0},"2026-08-18":{"cost":22768,"impr":12412,"views":3058,"conv":0,"clicks":0},"2026-08-19":{"cost":25037,"impr":13411,"views":3091,"conv":0,"clicks":0},"2026-08-20":{"cost":26799,"impr":15138,"views":3006,"conv":0,"clicks":0},"2026-08-21":{"cost":27610,"impr":16068,"views":3199,"conv":0,"clicks":0},"2026-08-22":{"cost":29050,"impr":17621,"views":3523,"conv":0,"clicks":0},"2026-08-23":{"cost":30586,"impr":17723,"views":3717,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","age":"만 55~64세"},{"byDate":{"2026-08-13":{"cost":221,"impr":65,"views":7,"conv":0,"clicks":0},"2026-08-14":{"cost":93,"impr":59,"views":7,"conv":0,"clicks":0},"2026-08-15":{"cost":223,"impr":113,"views":12,"conv":0,"clicks":0},"2026-08-16":{"cost":12,"impr":12,"views":2,"conv":0,"clicks":0},"2026-08-17":{"cost":0,"impr":14,"views":0,"conv":0,"clicks":0},"2026-08-18":{"cost":6,"impr":10,"views":1,"conv":0,"clicks":0},"2026-08-19":{"cost":10,"impr":7,"views":1,"conv":0,"clicks":0},"2026-08-20":{"cost":0,"impr":8,"views":0,"conv":0,"clicks":0},"2026-08-21":{"cost":37,"impr":22,"views":4,"conv":0,"clicks":0},"2026-08-22":{"cost":591,"impr":214,"views":14,"conv":0,"clicks":0},"2026-08-23":{"cost":486,"impr":276,"views":13,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","age":"알 수 없음"}],"byGender":[{"byDate":{"2026-08-13":{"cost":53816,"impr":17733,"views":1284,"conv":0,"clicks":0},"2026-08-14":{"cost":83984,"impr":33608,"views":3664,"conv":0,"clicks":0},"2026-08-15":{"cost":80181,"impr":34267,"views":4144,"conv":0,"clicks":0},"2026-08-16":{"cost":76474,"impr":34150,"views":4020,"conv":0,"clicks":0},"2026-08-17":{"cost":80026,"impr":37643,"views":4385,"conv":0,"clicks":0},"2026-08-18":{"cost":81694,"impr":37858,"views":4187,"conv":0,"clicks":0},"2026-08-19":{"cost":82872,"impr":37451,"views":3961,"conv":0,"clicks":0},"2026-08-20":{"cost":80035,"impr":38000,"views":3525,"conv":0,"clicks":0},"2026-08-21":{"cost":83789,"impr":43683,"views":3925,"conv":0,"clicks":0},"2026-08-22":{"cost":79897,"impr":40493,"views":3639,"conv":0,"clicks":0},"2026-08-23":{"cost":81648,"impr":41848,"views":3977,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","gender":"남성"},{"byDate":{"2026-08-13":{"cost":85971,"impr":37937,"views":1935,"conv":0,"clicks":0},"2026-08-14":{"cost":65213,"impr":22997,"views":2661,"conv":0,"clicks":0},"2026-08-15":{"cost":63563,"impr":24275,"views":3225,"conv":0,"clicks":0},"2026-08-16":{"cost":66906,"impr":26601,"views":3467,"conv":0,"clicks":0},"2026-08-17":{"cost":62225,"impr":28676,"views":3393,"conv":0,"clicks":0},"2026-08-18":{"cost":59662,"impr":26213,"views":2872,"conv":0,"clicks":0},"2026-08-19":{"cost":58903,"impr":25825,"views":2719,"conv":0,"clicks":0},"2026-08-20":{"cost":61527,"impr":26667,"views":2542,"conv":0,"clicks":0},"2026-08-21":{"cost":55132,"impr":26396,"views":2496,"conv":0,"clicks":0},"2026-08-22":{"cost":58219,"impr":27603,"views":2562,"conv":0,"clicks":0},"2026-08-23":{"cost":54995,"impr":26020,"views":2539,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","gender":"여성"},{"byDate":{"2026-08-13":{"cost":881,"impr":261,"views":17,"conv":0,"clicks":0},"2026-08-14":{"cost":7392,"impr":2587,"views":361,"conv":0,"clicks":0},"2026-08-15":{"cost":7635,"impr":3014,"views":461,"conv":0,"clicks":0},"2026-08-16":{"cost":7961,"impr":3588,"views":485,"conv":0,"clicks":0},"2026-08-17":{"cost":8142,"impr":3694,"views":519,"conv":0,"clicks":0},"2026-08-18":{"cost":8202,"impr":3740,"views":475,"conv":0,"clicks":0},"2026-08-19":{"cost":7423,"impr":3454,"views":403,"conv":0,"clicks":0},"2026-08-20":{"cost":7292,"impr":3293,"views":332,"conv":0,"clicks":0},"2026-08-21":{"cost":9012,"impr":4164,"views":456,"conv":0,"clicks":0},"2026-08-22":{"cost":9360,"impr":4189,"views":446,"conv":0,"clicks":0},"2026-08-23":{"cost":9874,"impr":4341,"views":496,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","gender":"알 수 없음"},{"byDate":{"2026-08-13":{"cost":56573,"impr":11061,"views":2055,"conv":0,"clicks":0},"2026-08-14":{"cost":57716,"impr":21560,"views":4519,"conv":0,"clicks":0},"2026-08-15":{"cost":57631,"impr":27517,"views":7294,"conv":0,"clicks":0},"2026-08-16":{"cost":59780,"impr":29771,"views":7914,"conv":0,"clicks":0},"2026-08-17":{"cost":59257,"impr":30817,"views":7999,"conv":0,"clicks":0},"2026-08-18":{"cost":57193,"impr":30614,"views":8119,"conv":0,"clicks":0},"2026-08-19":{"cost":54563,"impr":29173,"views":7150,"conv":0,"clicks":0},"2026-08-20":{"cost":50934,"impr":27586,"views":5933,"conv":0,"clicks":0},"2026-08-21":{"cost":49981,"impr":28224,"views":5958,"conv":0,"clicks":0},"2026-08-22":{"cost":48651,"impr":28356,"views":6026,"conv":0,"clicks":0},"2026-08-23":{"cost":52532,"impr":30370,"views":6558,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","gender":"남성"},{"byDate":{"2026-08-13":{"cost":39778,"impr":7870,"views":1378,"conv":0,"clicks":0},"2026-08-14":{"cost":41359,"impr":15563,"views":3543,"conv":0,"clicks":0},"2026-08-15":{"cost":41325,"impr":20118,"views":5663,"conv":0,"clicks":0},"2026-08-16":{"cost":39157,"impr":19854,"views":5503,"conv":0,"clicks":0},"2026-08-17":{"cost":39280,"impr":20207,"views":5564,"conv":0,"clicks":0},"2026-08-18":{"cost":39974,"impr":20914,"views":5812,"conv":0,"clicks":0},"2026-08-19":{"cost":42836,"impr":22624,"views":5783,"conv":0,"clicks":0},"2026-08-20":{"cost":46410,"impr":24714,"views":5614,"conv":0,"clicks":0},"2026-08-21":{"cost":46787,"impr":26395,"views":5791,"conv":0,"clicks":0},"2026-08-22":{"cost":47009,"impr":26521,"views":5946,"conv":0,"clicks":0},"2026-08-23":{"cost":41999,"impr":24339,"views":5372,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","gender":"여성"},{"byDate":{"2026-08-13":{"cost":240,"impr":51,"views":8,"conv":0,"clicks":0},"2026-08-14":{"cost":1282,"impr":562,"views":109,"conv":0,"clicks":0},"2026-08-15":{"cost":1618,"impr":745,"views":196,"conv":0,"clicks":0},"2026-08-16":{"cost":1170,"impr":650,"views":161,"conv":0,"clicks":0},"2026-08-17":{"cost":1320,"impr":669,"views":177,"conv":0,"clicks":0},"2026-08-18":{"cost":1369,"impr":698,"views":196,"conv":0,"clicks":0},"2026-08-19":{"cost":1291,"impr":712,"views":168,"conv":0,"clicks":0},"2026-08-20":{"cost":1468,"impr":728,"views":164,"conv":0,"clicks":0},"2026-08-21":{"cost":1269,"impr":746,"views":148,"conv":0,"clicks":0},"2026-08-22":{"cost":2124,"impr":984,"views":199,"conv":0,"clicks":0},"2026-08-23":{"cost":1886,"impr":1024,"views":190,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","gender":"알 수 없음"}],"byChildren":[{"byDate":{"2026-08-13":{"cost":4331,"impr":1888,"views":101,"conv":0,"clicks":0},"2026-08-14":{"cost":53848,"impr":21447,"views":2443,"conv":0,"clicks":0},"2026-08-15":{"cost":54208,"impr":23732,"views":3077,"conv":0,"clicks":0},"2026-08-16":{"cost":52028,"impr":24893,"views":3040,"conv":0,"clicks":0},"2026-08-17":{"cost":57704,"impr":29496,"views":3524,"conv":0,"clicks":0},"2026-08-18":{"cost":56464,"impr":28057,"views":3155,"conv":0,"clicks":0},"2026-08-19":{"cost":55185,"impr":27538,"views":2901,"conv":0,"clicks":0},"2026-08-20":{"cost":48445,"impr":25127,"views":2405,"conv":0,"clicks":0},"2026-08-21":{"cost":57469,"impr":30406,"views":2902,"conv":0,"clicks":0},"2026-08-22":{"cost":58467,"impr":30179,"views":2889,"conv":0,"clicks":0},"2026-08-23":{"cost":62554,"impr":34257,"views":3252,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","hasChildren":"자녀 있음"},{"byDate":{"2026-08-13":{"cost":2690,"impr":929,"views":64,"conv":0,"clicks":0},"2026-08-14":{"cost":47701,"impr":18046,"views":2269,"conv":0,"clicks":0},"2026-08-15":{"cost":47663,"impr":20034,"views":2777,"conv":0,"clicks":0},"2026-08-16":{"cost":50279,"impr":21814,"views":2998,"conv":0,"clicks":0},"2026-08-17":{"cost":48878,"impr":23501,"views":3019,"conv":0,"clicks":0},"2026-08-18":{"cost":48551,"impr":22310,"views":2694,"conv":0,"clicks":0},"2026-08-19":{"cost":48627,"impr":22174,"views":2532,"conv":0,"clicks":0},"2026-08-20":{"cost":42273,"impr":20641,"views":2072,"conv":0,"clicks":0},"2026-08-21":{"cost":51006,"impr":24778,"views":2558,"conv":0,"clicks":0},"2026-08-22":{"cost":49071,"impr":24616,"views":2430,"conv":0,"clicks":0},"2026-08-23":{"cost":51500,"impr":25924,"views":2655,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","hasChildren":"자녀 없음"},{"byDate":{"2026-08-13":{"cost":133647,"impr":53114,"views":3071,"conv":0,"clicks":0},"2026-08-14":{"cost":55040,"impr":19699,"views":1974,"conv":0,"clicks":0},"2026-08-15":{"cost":49508,"impr":17790,"views":1976,"conv":0,"clicks":0},"2026-08-16":{"cost":49034,"impr":17632,"views":1934,"conv":0,"clicks":0},"2026-08-17":{"cost":43811,"impr":17016,"views":1754,"conv":0,"clicks":0},"2026-08-18":{"cost":44543,"impr":17444,"views":1685,"conv":0,"clicks":0},"2026-08-19":{"cost":45386,"impr":17018,"views":1650,"conv":0,"clicks":0},"2026-08-20":{"cost":58136,"impr":22192,"views":1922,"conv":0,"clicks":0},"2026-08-21":{"cost":39458,"impr":19059,"views":1417,"conv":0,"clicks":0},"2026-08-22":{"cost":39938,"impr":17490,"views":1328,"conv":0,"clicks":0},"2026-08-23":{"cost":32463,"impr":12028,"views":1105,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554","hasChildren":"알 수 없음"},{"byDate":{"2026-08-13":{"cost":634,"impr":207,"views":23,"conv":0,"clicks":0},"2026-08-14":{"cost":9844,"impr":3815,"views":729,"conv":0,"clicks":0},"2026-08-15":{"cost":8370,"impr":4164,"views":1017,"conv":0,"clicks":0},"2026-08-16":{"cost":8320,"impr":4301,"views":1051,"conv":0,"clicks":0},"2026-08-17":{"cost":8799,"impr":4786,"views":1155,"conv":0,"clicks":0},"2026-08-18":{"cost":7878,"impr":4325,"views":1100,"conv":0,"clicks":0},"2026-08-19":{"cost":7816,"impr":4146,"views":999,"conv":0,"clicks":0},"2026-08-20":{"cost":7360,"impr":4162,"views":867,"conv":0,"clicks":0},"2026-08-21":{"cost":7790,"impr":4498,"views":905,"conv":0,"clicks":0},"2026-08-22":{"cost":8058,"impr":4912,"views":999,"conv":0,"clicks":0},"2026-08-23":{"cost":9475,"impr":5313,"views":1175,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","hasChildren":"자녀 있음"},{"byDate":{"2026-08-13":{"cost":4346,"impr":990,"views":162,"conv":0,"clicks":0},"2026-08-14":{"cost":74649,"impr":28274,"views":6376,"conv":0,"clicks":0},"2026-08-15":{"cost":82197,"impr":39425,"views":10890,"conv":0,"clicks":0},"2026-08-16":{"cost":79846,"impr":40100,"views":10957,"conv":0,"clicks":0},"2026-08-17":{"cost":82420,"impr":42484,"views":11486,"conv":0,"clicks":0},"2026-08-18":{"cost":84216,"impr":44689,"views":12200,"conv":0,"clicks":0},"2026-08-19":{"cost":84300,"impr":45151,"views":11306,"conv":0,"clicks":0},"2026-08-20":{"cost":81653,"impr":44005,"views":9773,"conv":0,"clicks":0},"2026-08-21":{"cost":84093,"impr":47280,"views":10316,"conv":0,"clicks":0},"2026-08-22":{"cost":82862,"impr":47353,"views":10448,"conv":0,"clicks":0},"2026-08-23":{"cost":82163,"impr":47767,"views":10421,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","hasChildren":"자녀 없음"},{"byDate":{"2026-08-13":{"cost":91611,"impr":17785,"views":3256,"conv":0,"clicks":0},"2026-08-14":{"cost":15864,"impr":5596,"views":1066,"conv":0,"clicks":0},"2026-08-15":{"cost":10007,"impr":4791,"views":1246,"conv":0,"clicks":0},"2026-08-16":{"cost":11941,"impr":5874,"views":1570,"conv":0,"clicks":0},"2026-08-17":{"cost":8638,"impr":4423,"views":1099,"conv":0,"clicks":0},"2026-08-18":{"cost":6442,"impr":3212,"views":827,"conv":0,"clicks":0},"2026-08-19":{"cost":6574,"impr":3212,"views":796,"conv":0,"clicks":0},"2026-08-20":{"cost":9799,"impr":4861,"views":1071,"conv":0,"clicks":0},"2026-08-21":{"cost":6154,"impr":3587,"views":676,"conv":0,"clicks":0},"2026-08-22":{"cost":6864,"impr":3596,"views":724,"conv":0,"clicks":0},"2026-08-23":{"cost":4779,"impr":2653,"views":524,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+","hasChildren":"알 수 없음"}],"byCampaign":[{"byDate":{"2026-08-13":{"cost":140668,"impr":55931,"views":3236,"conv":0,"clicks":0},"2026-08-14":{"cost":156589,"impr":59192,"views":6686,"conv":0,"clicks":0},"2026-08-15":{"cost":151379,"impr":61556,"views":7830,"conv":0,"clicks":0},"2026-08-16":{"cost":151341,"impr":64339,"views":7972,"conv":0,"clicks":0},"2026-08-17":{"cost":150393,"impr":70013,"views":8297,"conv":0,"clicks":0},"2026-08-18":{"cost":149558,"impr":67811,"views":7534,"conv":0,"clicks":0},"2026-08-19":{"cost":149198,"impr":66730,"views":7083,"conv":0,"clicks":0},"2026-08-20":{"cost":148854,"impr":67960,"views":6399,"conv":0,"clicks":0},"2026-08-21":{"cost":147933,"impr":74243,"views":6877,"conv":0,"clicks":0},"2026-08-22":{"cost":147476,"impr":72285,"views":6647,"conv":0,"clicks":0},"2026-08-23":{"cost":146517,"impr":72209,"views":7012,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_3554"},{"byDate":{"2026-08-13":{"cost":96591,"impr":18982,"views":3441,"conv":0,"clicks":0},"2026-08-14":{"cost":100357,"impr":37685,"views":8171,"conv":0,"clicks":0},"2026-08-15":{"cost":100574,"impr":48380,"views":13153,"conv":0,"clicks":0},"2026-08-16":{"cost":100107,"impr":50275,"views":13578,"conv":0,"clicks":0},"2026-08-17":{"cost":99857,"impr":51693,"views":13740,"conv":0,"clicks":0},"2026-08-18":{"cost":98536,"impr":52226,"views":14127,"conv":0,"clicks":0},"2026-08-19":{"cost":98690,"impr":52509,"views":13101,"conv":0,"clicks":0},"2026-08-20":{"cost":98812,"impr":53028,"views":11711,"conv":0,"clicks":0},"2026-08-21":{"cost":98037,"impr":55365,"views":11897,"conv":0,"clicks":0},"2026-08-22":{"cost":97784,"impr":55861,"views":12171,"conv":0,"clicks":0},"2026-08-23":{"cost":96417,"impr":55733,"views":12120,"conv":0,"clicks":0}},"campaign":"★ 2026_08_평창효석문화축제_5565+"}],"creatives":[{"campaign":"★ 2026_08_평창효석문화축제_3554","adGroup":"동영상 조회수 - 2026-08-13 - 3050MF","adName":"광고 #1","videoId":"406877868514","status":"사용중","adType":"반응형 동영상 광고","byDate":{"2026-08-13":{"cost":140669,"impr":55931,"views":3236,"conv":0,"clicks":0},"2026-08-14":{"cost":156589,"impr":59192,"views":6686,"conv":0,"clicks":0},"2026-08-15":{"cost":151380,"impr":61556,"views":7830,"conv":0,"clicks":0},"2026-08-16":{"cost":151341,"impr":64339,"views":7972,"conv":0,"clicks":0},"2026-08-17":{"cost":150393,"impr":70013,"views":8297,"conv":0,"clicks":0},"2026-08-18":{"cost":149559,"impr":67811,"views":7534,"conv":0,"clicks":0},"2026-08-19":{"cost":149200,"impr":66730,"views":7083,"conv":0,"clicks":0},"2026-08-20":{"cost":148854,"impr":67960,"views":6399,"conv":0,"clicks":0},"2026-08-21":{"cost":134095,"impr":62184,"views":6355,"conv":0,"clicks":0},"2026-08-22":{"cost":128617,"impr":60225,"views":5981,"conv":0,"clicks":0},"2026-08-23":{"cost":142082,"impr":70317,"views":6863,"conv":0,"clicks":0}}},{"campaign":"★ 2026_08_평창효석문화축제_5565+","adGroup":"동영상 조회수 - 2026-08-13 - 60+MF","adName":"광고 #1","videoId":"406877868514","status":"사용중","adType":"반응형 동영상 광고","byDate":{"2026-08-13":{"cost":96591,"impr":18982,"views":3441,"conv":0,"clicks":0},"2026-08-14":{"cost":100359,"impr":37685,"views":8171,"conv":0,"clicks":0},"2026-08-15":{"cost":100573,"impr":48380,"views":13153,"conv":0,"clicks":0},"2026-08-16":{"cost":100105,"impr":50275,"views":13578,"conv":0,"clicks":0},"2026-08-17":{"cost":99858,"impr":51693,"views":13740,"conv":0,"clicks":0},"2026-08-18":{"cost":98537,"impr":52226,"views":14127,"conv":0,"clicks":0},"2026-08-19":{"cost":98691,"impr":52509,"views":13101,"conv":0,"clicks":0},"2026-08-20":{"cost":98811,"impr":53028,"views":11711,"conv":0,"clicks":0},"2026-08-21":{"cost":92089,"impr":49260,"views":11233,"conv":0,"clicks":0},"2026-08-22":{"cost":89013,"impr":49731,"views":11163,"conv":0,"clicks":0},"2026-08-23":{"cost":95041,"impr":54912,"views":11964,"conv":0,"clicks":0}}},{"campaign":"★ 2026_08_평창효석문화축제_3554","adGroup":"동영상 조회수 - 2026-08-13 - 3050MF","adName":"광고 #2","videoId":"410565223259","status":"사용중","adType":"반응형 동영상 광고","byDate":{"2026-08-21":{"cost":13838,"impr":12059,"views":522,"conv":0,"clicks":0},"2026-08-22":{"cost":18856,"impr":12060,"views":666,"conv":0,"clicks":0},"2026-08-23":{"cost":4436,"impr":1892,"views":149,"conv":0,"clicks":0}}},{"campaign":"★ 2026_08_평창효석문화축제_5565+","adGroup":"동영상 조회수 - 2026-08-13 - 60+MF","adName":"광고 #2","videoId":"410565223259","status":"사용중","adType":"반응형 동영상 광고","byDate":{"2026-08-21":{"cost":5948,"impr":6105,"views":664,"conv":0,"clicks":0},"2026-08-22":{"cost":8772,"impr":6130,"views":1008,"conv":0,"clicks":0},"2026-08-23":{"cost":1375,"impr":821,"views":156,"conv":0,"clicks":0}}}]}};
 
 function emptyTotals(){ return {cost:0,impr:0,views:0,conv:0,clicks:0}; }
 function addTotals(dst,src){ for (const k in dst) dst[k]+=(src[k]||0); }
@@ -347,20 +377,77 @@ function metrics(t) {
   return withRatios({ ...t, cost: t.cost*vatF() });
 }
 
+// 캠페인 필터. 데이터셋의 타겟 집계는 전부 캠페인 차원을 갖고 있으므로
+// '전체'는 라벨 기준으로 합산하고, 특정 캠페인은 해당 행만 남긴다.
+const CAMPAIGNS = DATA.google.campaigns || [];
+let CUR_CAMPAIGN = 'all';
+
+// '★ 2026_08_평창효석문화축제_3554' → '3554' (사이드바·표에 쓰는 짧은 이름)
+function campShort(c) {
+  const s = String(c)
+    .replace(/^[^0-9A-Za-z가-힣]+/, '')
+    .replace(/^\d{4}_\d{2}_/, '')
+    .replace(/^평창효석문화축제_?/, '')
+    .trim();
+  return s || String(c);
+}
+function campLabelNow() {
+  return CUR_CAMPAIGN === 'all' ? '전체 캠페인' : campShort(CUR_CAMPAIGN);
+}
+function mergeByDate(items) {
+  const out = {};
+  for (const it of items) {
+    for (const d in it.byDate) {
+      if (!out[d]) out[d] = emptyTotals();
+      addTotals(out[d], it.byDate[d]);
+    }
+  }
+  return out;
+}
+// 캠페인 차원을 가진 타겟 배열 → 현재 필터에 맞춰 라벨 단위로 축약
+function targetItems(items, labelKey) {
+  const sel = CUR_CAMPAIGN === 'all' ? items : items.filter(it => it.campaign === CUR_CAMPAIGN);
+  const map = new Map();
+  for (const it of sel) {
+    const label = it[labelKey];
+    if (!map.has(label)) map.set(label, []);
+    map.get(label).push(it);
+  }
+  const out = [];
+  for (const [label, arr] of map.entries()) {
+    const o = { byDate: mergeByDate(arr) };
+    o[labelKey] = label;
+    out.push(o);
+  }
+  return out;
+}
+// 캠페인 분리 표시용 — 축약하지 않고 캠페인 행을 그대로 둔다
+function targetSplitItems(items) {
+  return CUR_CAMPAIGN === 'all' ? items.slice() : items.filter(it => it.campaign === CUR_CAMPAIGN);
+}
+
 // 단일 매체(구글 VVC) 대시보드 — 매체 병합 없이 google 데이터셋을 그대로 본다.
 function currentView() {
   const d = DATA.google;
+  const all = CUR_CAMPAIGN === 'all';
+  const campRows = (d.byCampaign || []).filter(c => all || c.campaign === CUR_CAMPAIGN);
+  const byDate = all ? d.byDate : mergeByDate(campRows);
   return {
-    dates: d.dates.slice(),
-    byDate: d.byDate,
-    byAge: d.byAge,
-    byGender: d.byGender,
-    byChildren: d.byChildren,
-    creatives: d.creatives || [],
+    dates: all ? d.dates.slice() : Object.keys(byDate).sort(),
+    byDate,
+    byCampaign: campRows,
+    byAge: targetItems(d.byAge, 'age'),
+    byGender: targetItems(d.byGender, 'gender'),
+    byChildren: targetItems(d.byChildren, 'hasChildren'),
+    ageSplit: targetSplitItems(d.byAge),
+    genderSplit: targetSplitItems(d.byGender),
+    childrenSplit: targetSplitItems(d.byChildren),
+    creatives: (d.creatives || []).filter(c => all || c.campaign === CUR_CAMPAIGN),
   };
 }
 
 let CUR_PERIOD = 'thisWeek';
+let CUSTOM_RANGE = [null, null];
 
 function setVat(m) { VAT_MODE = m; document.querySelectorAll('#vat-toggle button').forEach(b => b.classList.toggle('active', b.dataset.vat === m)); renderAll(); }
 
@@ -387,12 +474,19 @@ const PERIODS = [
   { key: 'yesterday', label: '어제' },
   { key: 'thisWeek', label: '이번주' },
   { key: 'all', label: '전체 기간' },
+  { key: 'custom', label: '직접 선택' },
 ];
 
 function getRange(dates, period) {
   if (dates.length === 0) return ['0000-00-00','9999-99-99'];
   const maxDate = dates[dates.length-1];
   const d = parseISO(maxDate);
+  // 직접 선택: 시작>종료로 넣어도 자동 정렬. 한쪽만 채우면 하루로 본다.
+  if (period === 'custom' && (CUSTOM_RANGE[0] || CUSTOM_RANGE[1])) {
+    const a = CUSTOM_RANGE[0] || CUSTOM_RANGE[1];
+    const b = CUSTOM_RANGE[1] || CUSTOM_RANGE[0];
+    return a <= b ? [a, b] : [b, a];
+  }
   if (period === 'yesterday') return [maxDate, maxDate];
   if (period === 'thisWeek') {
     const daysSinceMonday = (d.getDay() + 6) % 7;
@@ -423,11 +517,55 @@ function renderPeriodPills() {
   const el = document.getElementById('period-pills');
   el.innerHTML = PERIODS.map(p => `<button class="sb-pill ${p.key===CUR_PERIOD?'active':''}" onclick="setPeriod('${p.key}')">${p.label}</button>`).join('');
 }
-function setPeriod(key) { CUR_PERIOD = key; renderAll(); }
+function setPeriod(key) {
+  CUR_PERIOD = key;
+  renderAll();
+  if (key === 'custom') document.getElementById('date-start').focus();
+}
+
+// 캠페인명에 따옴표·특수문자가 들어가도 안전하도록 onclick에는 인덱스만 넘긴다(-1 = 전체).
+function renderCampaignPills() {
+  const opts = [{ idx: -1, key: 'all', label: '전체 (캠페인 합산)' }]
+    .concat(CAMPAIGNS.map((c, i) => ({ idx: i, key: c, label: campShort(c) })));
+  document.getElementById('campaign-pills').innerHTML = opts.map(o =>
+    '<button class="sb-pill' + (o.key === CUR_CAMPAIGN ? ' active' : '') +
+    '" onclick="setCampaignIdx(' + o.idx + ')">' + o.label + '</button>'
+  ).join('');
+}
+function setCampaignIdx(i) { setCampaign(i < 0 ? 'all' : CAMPAIGNS[i]); }
+function setCampaign(key) { CUR_CAMPAIGN = key; renderAll(); }
+
+// 날짜 입력칸을 만지면 '직접 선택'으로 전환된다.
+function setCustomRange() {
+  const s = document.getElementById('date-start').value;
+  const e = document.getElementById('date-end').value;
+  if (!s && !e) return;
+  CUSTOM_RANGE = [s || null, e || null];
+  CUR_PERIOD = 'custom';
+  renderAll();
+}
+// 프리셋으로 기간이 바뀌면 입력칸도 그 값으로 따라온다.
+function syncDateInputs(view, start, end) {
+  const si = document.getElementById('date-start');
+  const ei = document.getElementById('date-end');
+  const lo = view.dates[0];
+  const hi = view.dates[view.dates.length - 1];
+  for (const el of [si, ei]) {
+    if (lo) el.min = lo;
+    if (hi) el.max = hi;
+  }
+  si.value = start;
+  ei.value = end;
+  const days = Math.round((parseISO(end) - parseISO(start)) / 86400000) + 1;
+  document.getElementById('date-hint').innerHTML = CUR_PERIOD === 'custom'
+    ? '선택 구간 <b>' + days + '일</b> · 하루만 보려면 시작·종료를 같게'
+    : '날짜를 직접 고르면 <b>직접 선택</b>으로 전환됩니다.';
+}
 
 function renderKPI(view) {
   const [start, end] = getRange(view.dates, CUR_PERIOD);
-  document.getElementById('hd-range').innerHTML = start === end ? fmtShortColored(start) : fmtShortColored(start) + ' ~ ' + fmtShortColored(end);
+  const rangeTxt = start === end ? fmtShortColored(start) : fmtShortColored(start) + ' ~ ' + fmtShortColored(end);
+  document.getElementById('hd-range').innerHTML = rangeTxt + ' <span class="camp-tag">' + campLabelNow() + '</span>';
   const raw = sumRange(view.byDate, start, end);
   const m = metrics(raw);
   const cards = [
@@ -517,6 +655,37 @@ function renderDailyTable(view, start, end) {
   document.getElementById('daily-tbody').innerHTML = html;
 }
 
+// 캠페인별 성과 — §5 보고 규칙(합산 대신 캠페인별 판단)을 화면에서 바로 볼 수 있게 한다.
+function campaignRows(view, start, end) {
+  return (view.byCampaign || [])
+    .map(c => ({ label: campShort(c.campaign), m: metrics(sumRange(c.byDate, start, end)) }))
+    .filter(({ m }) => m.cost > 0 || m.impr > 0)
+    .sort((a, b) => b.m.cost - a.m.cost);
+}
+function renderCampaignTable(view, start, end) {
+  const rows = campaignRows(view, start, end);
+  let html = rows.map(({ label, m }) => '<tr>' +
+    '<td class="left name">' + label + '</td>' +
+    '<td class="num">' + fmtW(m.cost) + '</td>' +
+    '<td class="num">' + fmtK(m.impr) + '</td>' +
+    '<td class="num">' + fmtK(m.views) + '</td>' +
+    '<td class="num">' + fmtPct(m.vtr) + '</td>' +
+    '<td class="num">' + fmtCPV(m.cpv) + '</td>' +
+    '</tr>').join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
+  if (rows.length > 1) {
+    const t = totalOf(rows, r => r.m);
+    html += '<tr class="total-row">' +
+      '<td class="left name">합계 <span class="badge">합산 참고용</span></td>' +
+      '<td class="num">' + fmtW(t.cost) + '</td>' +
+      '<td class="num">' + fmtK(t.impr) + '</td>' +
+      '<td class="num">' + fmtK(t.views) + '</td>' +
+      '<td class="num">' + fmtPct(t.vtr) + '</td>' +
+      '<td class="num">' + fmtCPV(t.cpv) + '</td>' +
+      '</tr>';
+  }
+  document.getElementById('campaign-tbody').innerHTML = html;
+}
+
 function creativeRows(view, start, end) {
   return view.creatives
     .map(c => ({ c, m: metrics(sumRange(c.byDate, start, end)) }))
@@ -526,7 +695,7 @@ function creativeRows(view, start, end) {
 function renderCreativeTable(view, start, end) {
   const rows = creativeRows(view, start, end);
   let html = rows.map(({ c, m }) => `<tr>
-    <td class="left">${esc(c.campaign)}</td>
+    <td class="left"><span class="camp-tag">${esc(campShort(c.campaign))}</span></td>
     <td class="left name">${esc(c.adName)}${c.status && c.status !== '사용중' ? ' <span class="badge">'+esc(c.status)+'</span>' : ''}</td>
     <td class="num">${fmtW(m.cost)}</td>
     <td class="num">${fmtK(m.impr)}</td>
@@ -615,15 +784,45 @@ function renderTargetDonut(dim, rows) {
     },
   });
 }
-function renderTargetPanel(dim, items, start, end) {
-  const rows = targetRows(items, dim.labelKey, start, end);
-  if (TARGET_VIEW[dim.key] === 'chart') renderTargetDonut(dim, rows);
-  else renderTargetTableRows(dim.key + '-tbody', rows);
+// 캠페인 분리 모드: 라벨을 합치지 않고 캠페인 × 라벨 그대로 나열
+function targetSplitRows(items, labelKey, start, end) {
+  return items
+    .map(it => ({ camp: campShort(it.campaign), label: it[labelKey], m: metrics(sumRange(it.byDate, start, end)) }))
+    .filter(({ m }) => m.cost > 0 || m.impr > 0)
+    .sort((a, b) => a.camp.localeCompare(b.camp, 'ko') || b.m.cost - a.m.cost);
+}
+function renderTargetHead(dim, mode) {
+  const head = mode === 'split'
+    ? '<th class="left">캠페인</th><th class="left">' + dim.label + '</th>'
+    : '<th class="left">' + dim.label + '</th>';
+  document.getElementById(dim.key + '-thead').innerHTML =
+    '<tr>' + head + '<th>비용</th><th>조회수</th><th>VTR</th><th>CPV</th></tr>';
+}
+function renderTargetSplitRows(elId, rows) {
+  let html = rows.map(({ camp, label, m }) => '<tr>' +
+    '<td class="left"><span class="camp-tag">' + esc(camp) + '</span></td>' +
+    '<td class="left name">' + esc(label) + '</td>' +
+    '<td class="num">' + fmtW(m.cost) + '</td>' +
+    '<td class="num">' + fmtK(m.views) + '</td>' +
+    '<td class="num">' + fmtPct(m.vtr) + '</td>' +
+    '<td class="num">' + fmtCPV(m.cpv) + '</td>' +
+    '</tr>').join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-faint);padding:24px">데이터 없음</td></tr>';
+  document.getElementById(elId).innerHTML = html;
+}
+function renderTargetPanel(dim, items, splitItems, start, end) {
+  const mode = TARGET_VIEW[dim.key];
+  if (mode === 'chart') {
+    renderTargetDonut(dim, targetRows(items, dim.labelKey, start, end));
+    return;
+  }
+  renderTargetHead(dim, mode);
+  if (mode === 'split') renderTargetSplitRows(dim.key + '-tbody', targetSplitRows(splitItems, dim.labelKey, start, end));
+  else renderTargetTableRows(dim.key + '-tbody', targetRows(items, dim.labelKey, start, end));
 }
 function setTargetView(key, mode) {
   TARGET_VIEW[key] = mode;
   document.querySelectorAll('#' + key + '-toggle .vt-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  document.getElementById(key + '-table-wrap').style.display = mode === 'table' ? '' : 'none';
+  document.getElementById(key + '-table-wrap').style.display = mode === 'chart' ? 'none' : '';
   document.getElementById(key + '-chart-wrap').style.display = mode === 'chart' ? 'flex' : 'none';
   renderAll();
 }
@@ -642,10 +841,16 @@ function buildExportCSV(view, start, end) {
   if (dailyRows.length > 0) lines.push(csvLine(['TOTAL', '', ...csvMetricCells(totalOf(dailyRows, r => r.m))]));
 
   lines.push('');
+  lines.push('캠페인별 성과');
+  lines.push(csvLine(['캠페인', '비용', '노출', '조회수', 'VTR(%)', 'CPV']));
+  const campRows = campaignRows(view, start, end);
+  for (const { label, m } of campRows) lines.push(csvLine([label, ...csvMetricCells(m)]));
+
+  lines.push('');
   lines.push('소재별 성과');
   lines.push(csvLine(['캠페인', '소재', '비용', '노출', '조회수', 'VTR(%)', 'CPV']));
   const cRows = creativeRows(view, start, end);
-  for (const { c, m } of cRows) lines.push(csvLine([c.campaign, c.adName, ...csvMetricCells(m)]));
+  for (const { c, m } of cRows) lines.push(csvLine([campShort(c.campaign), c.adName, ...csvMetricCells(m)]));
   if (cRows.length > 0) lines.push(csvLine(['TOTAL', '', ...csvMetricCells(totalOf(cRows, r => r.m))]));
 
   for (const dim of TARGET_DIMS) {
@@ -656,6 +861,14 @@ function buildExportCSV(view, start, end) {
     const tRows = targetRows(items, dim.labelKey, start, end);
     for (const { label, m } of tRows) lines.push(csvLine([label, ...csvMetricCells(m)]));
     if (tRows.length > 0) lines.push(csvLine(['TOTAL', ...csvMetricCells(totalOf(tRows, r => r.m))]));
+
+    // 캠페인 × 라벨 (합산 전 원자료) — 캠페인별 판단용
+    lines.push(dim.label + '별 성과 (캠페인 분리)');
+    lines.push(csvLine(['캠페인', dim.label, '비용', '노출', '조회수', 'VTR(%)', 'CPV']));
+    const splitItems = dim.key === 'age' ? view.ageSplit : dim.key === 'gender' ? view.genderSplit : view.childrenSplit;
+    for (const { camp, label, m } of targetSplitRows(splitItems, dim.labelKey, start, end)) {
+      lines.push(csvLine([camp, label, ...csvMetricCells(m)]));
+    }
   }
   return lines.join('\r\n');
 }
@@ -671,19 +884,23 @@ function downloadData() {
   const view = currentView();
   const [start, end] = getRange(view.dates, CUR_PERIOD);
   const stamp = start === end ? start : start + '_' + end;
-  downloadCSV(`hyoseok-dashboard_${stamp}.csv`, buildExportCSV(view, start, end));
+  const campPart = CUR_CAMPAIGN === 'all' ? '' : '_' + campShort(CUR_CAMPAIGN).replace(/[^0-9A-Za-z가-힣+]/g, '');
+  downloadCSV('hyoseok-dashboard_' + stamp + campPart + '.csv', buildExportCSV(view, start, end));
 }
 
 function renderAll() {
+  renderCampaignPills();
   renderPeriodPills();
   const view = currentView();
   const [start, end] = renderKPI(view);
+  syncDateInputs(view, start, end);
+  renderCampaignTable(view, start, end);
   renderChart(view, start, end);
   renderDailyTable(view, start, end);
   renderCreativeTable(view, start, end);
-  renderTargetPanel(TARGET_DIMS[0], view.byAge, start, end);
-  renderTargetPanel(TARGET_DIMS[1], view.byGender, start, end);
-  renderTargetPanel(TARGET_DIMS[2], view.byChildren, start, end);
+  renderTargetPanel(TARGET_DIMS[0], view.byAge, view.ageSplit, start, end);
+  renderTargetPanel(TARGET_DIMS[1], view.byGender, view.genderSplit, start, end);
+  renderTargetPanel(TARGET_DIMS[2], view.byChildren, view.childrenSplit, start, end);
 }
 renderAll();
 
